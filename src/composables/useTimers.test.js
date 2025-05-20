@@ -47,6 +47,6 @@ describe("useTimers", () => {
     const { formatTime } = useTimers();
 
     expect(formatTime(65)).toBe("1:05");
-    expect(formatTime(3600)).toBe("60:00");
+    expect(formatTime(3600)).toBe("1:00:00");
   });
 });

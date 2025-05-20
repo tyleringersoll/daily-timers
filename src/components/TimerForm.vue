@@ -25,18 +25,18 @@ const handleSubmit = () => {
         v-model="newTimerName"
         type="text"
         placeholder="Timer name"
-        class="px-2 py-1 border rounded"
+        class="px-2 py-1 border rounded w-60"
       />
       <input
         v-model="newTimerMinutes"
         type="number"
         min="1"
         placeholder="Minutes (default 5)"
-        class="px-2 py-1 border rounded w-24"
+        class="px-2 py-1 border rounded w-60"
       />
       <button
         @click="handleSubmit"
-        class="px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+        class="px-4 py-1 w-36 bg-blue-500 text-white rounded hover:bg-blue-600"
       >
         Add Timer
       </button>
