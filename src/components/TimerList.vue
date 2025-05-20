@@ -20,7 +20,6 @@ const emit = defineEmits([
 
 <template>
   <div class="space-y-4">
-    <h2 class="text-lg font-semibold">Active Timers</h2>
     <div
       v-for="timer in timers"
       :key="timer.id"

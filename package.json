@@ -26,7 +26,7 @@
     "vite": "^5.0.11",
     "vitest": "^3.0.5"
   },
-  "description": "This application is a simple repeating timer app built with Vue 3 and Tailwind CSS.",
+  "description": "This application is a simple repeating timer and daily schedule app built with Vue 3 and Tailwind CSS.",
   "main": "tailwind.config.js",
   "keywords": [],
   "author": "",

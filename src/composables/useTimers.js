@@ -1,4 +1,4 @@
-import { ref, watch } from "vue";
+import { ref, watch, onMounted } from "vue";
 import { STORAGE_KEY } from "../constants";
 import { useAudio } from "./useAudio";
 import { useNotification } from "./useNotification";
@@ -7,6 +7,76 @@ export function useTimers() {
   const timers = ref([]);
   const { playSound } = useAudio();
   const { sendNotification } = useNotification();
+
+  onMounted(() => {
+    const style = document.createElement("style");
+    style.textContent = `
+      .timer-toast {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #3b82f6;
+        color: white;
+        padding: 1.5rem 2rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        z-index: 50;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        width: 100%;
+        max-width: 300px;
+        max-height: 140px;
+        text-align: center;
+      }
+      .timer-toast.fade-out {
+        animation: fadeOut 0.3s ease-out;
+      }
+      .timer-toast-button {
+        background-color: white;
+        color: #3b82f6;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.2s;
+      }
+      .timer-toast-button:hover {
+        background-color: #f8fafc;
+      }
+    `;
+    document.head.appendChild(style);
+  });
+
+  const showToast = (timer) => {
+    const toast = document.createElement("div");
+    toast.className = "timer-toast";
+
+    const messageDiv = document.createElement("div");
+    messageDiv.textContent = `Complete task: ${timer.name}`;
+
+    const button = document.createElement("button");
+    button.className = "timer-toast-button";
+    button.textContent = "Done! Start again";
+
+    button.onclick = () => {
+      timer.remaining = timer.minutes * 60;
+      startTimer(timer);
+
+      toast.classList.add("fade-out");
+      setTimeout(() => {
+        if (document.body.contains(toast)) {
+          document.body.removeChild(toast);
+        }
+      }, 300);
+    };
+
+    toast.appendChild(messageDiv);
+    toast.appendChild(button);
+    document.body.appendChild(toast);
+  };
 
   const loadTimers = () => {
     const savedTimers = localStorage.getItem(STORAGE_KEY);
@@ -36,7 +106,6 @@ export function useTimers() {
 
     timer.isRunning = true;
     timer.intervalId = setInterval(() => {
-      // Create a new reference to force reactivity
       timers.value = timers.value.map((t) => {
         if (t.id === timer.id) {
           return { ...t, remaining: t.remaining - 1 };
@@ -46,12 +115,14 @@ export function useTimers() {
 
       const currentTimer = timers.value.find((t) => t.id === timer.id);
       if (currentTimer.remaining <= 0) {
+        pauseTimer(currentTimer);
+
         playSound();
         sendNotification(`Timer: ${currentTimer.name}`, {
           body: "Time is up!",
         });
-        alert(`Timer "${currentTimer.name}" is complete!`);
-        currentTimer.remaining = currentTimer.minutes * 60;
+
+        showToast(currentTimer);
       }
     }, 1000);
   };
@@ -76,10 +147,18 @@ export function useTimers() {
     timers.value = timers.value.filter((t) => t.id !== timer.id);
   };
 
-  const formatTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  const formatTime = (totalSeconds) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    const format = (num) => num.toString().padStart(2, "0");
+
+    if (hours > 0) {
+      return `${hours}:${format(minutes)}:${format(seconds)}`;
+    }
+
+    return `${minutes}:${format(seconds)}`;
   };
 
   watch(

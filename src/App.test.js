@@ -3,7 +3,6 @@ import { mount } from "@vue/test-utils";
 import { ref } from "vue";
 import App from "./App.vue";
 
-// Create mock functions
 const mockLoadSchedule = vi.fn();
 const mockIsWithinSchedule = vi.fn().mockReturnValue(true);
 const mockLoadTimers = vi.fn();
@@ -12,12 +11,10 @@ const mockStartTimer = vi.fn();
 const mockPauseTimer = vi.fn();
 const mockFormatTime = vi.fn();
 
-// Create mock timer data
 const mockTimersRef = ref([
   { id: 1, name: "Test Timer", isRunning: true, intervalId: null },
 ]);
 
-// Mock the composables
 vi.mock("./composables/useSchedule", () => ({
   useSchedule: vi.fn(() => ({
     scheduleStart: ref("09:00"),
@@ -41,7 +38,6 @@ vi.mock("./composables/useTimers", () => ({
   })),
 }));
 
-// Add component stubs with default props
 const stubs = {
   TimerList: {
     name: "TimerList",
@@ -76,7 +72,6 @@ describe("App.vue", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
-    // Reset the mock timers ref
     mockTimersRef.value = [
       { id: 1, name: "Test Timer", isRunning: true, intervalId: null },
     ];
@@ -118,9 +113,11 @@ describe("App.vue", () => {
       },
     });
     await wrapper.vm.$nextTick();
+    await wrapper.find('button[class*="bg-blue-500"]').trigger("click");
+    await wrapper.vm.$nextTick();
 
     const timerForm = wrapper.findComponent(stubs.TimerForm);
-    expect(timerForm.exists()).toBe(true); // Add this assertion to debug
+    expect(timerForm.exists()).toBe(true);
 
     await timerForm.vm.$emit("add-timer", {
       name: "Test Timer",
