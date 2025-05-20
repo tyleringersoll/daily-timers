@@ -96,9 +96,6 @@ const handleEditTask = ({ day, taskId, newText }) => {
       { ...tasks[idx], text: newText },
       ...tasks.slice(idx + 1),
     ];
-    if (typeof saveTasks === "function") {
-      saveTasks();
-    }
   }
 };
 

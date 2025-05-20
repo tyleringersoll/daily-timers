@@ -35,7 +35,7 @@ const handleSubmit = () => {
 
 <template>
   <div class="mb-6 p-4 bg-gray-100 rounded">
-    <h2 class="text-lg font-semibold mb-2">Add Daily Task</h2>
+    <h2 class="text-lg font-semibold mb-2">Add Task</h2>
     <div class="flex gap-4 items-center">
       <select v-model="selectedDay" class="px-2 py-1 border rounded h-9 w-60">
         <option value="Every Day" class="font-semibold text-blue-600">
