@@ -1,153 +1,103 @@
-import { describe, it, expect } from "vitest";
-import { mount } from "@vue/test-utils";
-import WeeklyTaskList from "./WeeklyTaskList.vue";
-import { DAYS_OF_WEEK } from "../constants";
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { ref } from 'vue'
+import WeeklyTaskList from './WeeklyTaskList.vue'
+import { useWeeklyTaskStore } from '../stores/weeklyTasks'
+import { DAYS_OF_WEEK } from '../constants'
 
-function makeTasks() {
-  return {
-    Monday: [
-      { id: "1", text: "Task 1", repeating: false },
-      { id: "2", text: "Task 2", repeating: true },
-    ],
-    Tuesday: [],
-    Wednesday: [],
-    Thursday: [],
-    Friday: [],
-    Saturday: [],
-    Sunday: [],
-  };
+// Pin "current day" to Monday so tests are day-independent.
+vi.mock('../composables/useCurrentDay', () => ({
+  useCurrentDay: () => ({ currentDay: ref('Monday') }),
+}))
+
+function seedStore(store) {
+  store.tasks['Monday'] = [
+    { id: '1', text: 'Task 1', repeating: false },
+    { id: '2', text: 'Task 2', repeating: true },
+  ]
+  store.completion['Monday'] = { '1': false, '2': true }
 }
 
-function makeCompletion() {
-  return {
-    Monday: { 1: false, 2: true },
-    Tuesday: {},
-    Wednesday: {},
-    Thursday: {},
-    Friday: {},
-    Saturday: {},
-    Sunday: {},
-  };
-}
+describe('WeeklyTaskList', () => {
+  let pinia, store
 
-describe("WeeklyTaskList", () => {
-  it("renders current day tasks in daily view", () => {
-    const wrapper = mount(WeeklyTaskList, {
-      props: {
-        weeklyTasks: makeTasks(),
-        taskCompletion: makeCompletion(),
-      },
-      global: {
-        mocks: {
-          $currentDay: "Monday",
-        },
-      },
-    });
-    expect(wrapper.text()).toContain("Task 1");
-    expect(wrapper.text()).toContain("Task 2");
-    expect(wrapper.text()).not.toContain("Edit");
-    expect(wrapper.text()).not.toContain("Delete");
-  });
+  beforeEach(() => {
+    pinia = createPinia()
+    setActivePinia(pinia)
+    store = useWeeklyTaskStore()
+    seedStore(store)
+  })
 
-  it("toggles to all weekly tasks view and shows Edit/Delete", async () => {
-    const wrapper = mount(WeeklyTaskList, {
-      props: {
-        weeklyTasks: makeTasks(),
-        taskCompletion: makeCompletion(),
-      },
-    });
-    await wrapper.find("button").trigger("click");
-    expect(wrapper.text()).toContain("All Weekly Tasks");
-    expect(wrapper.text()).toContain("Edit");
-    expect(wrapper.text()).toContain("Delete");
-  });
+  const mountIt = () => mount(WeeklyTaskList, { global: { plugins: [pinia] } })
 
-  it("emits toggle-task when checkbox is clicked", async () => {
-    const wrapper = mount(WeeklyTaskList, {
-      props: {
-        weeklyTasks: makeTasks(),
-        taskCompletion: makeCompletion(),
-      },
-    });
-    const checkbox = wrapper.find('input[type="checkbox"]');
-    await checkbox.setValue(true);
-    expect(wrapper.emitted("toggle-task")).toBeTruthy();
-  });
+  it("shows today's tasks by default (Monday tab active)", () => {
+    const wrapper = mountIt()
+    expect(wrapper.text()).toContain('Task 1')
+    expect(wrapper.text()).toContain('Task 2')
+  })
 
-  it("renders all days in weekly view", async () => {
-    const wrapper = mount(WeeklyTaskList, {
-      props: {
-        weeklyTasks: makeTasks(),
-        taskCompletion: makeCompletion(),
-      },
-    });
-    await wrapper.find("button").trigger("click");
+  it('switches to all-days view when All tab is clicked', async () => {
+    const wrapper = mountIt()
+    const allTab = wrapper.findAll('[role="tab"]').find(b => b.text().includes('All'))
+    await allTab.trigger('click')
     for (const day of DAYS_OF_WEEK) {
-      expect(wrapper.text()).toContain(day);
+      expect(wrapper.text()).toContain(day)
     }
-  });
+  })
 
-  it("shows input and emits edit-task when editing and saving", async () => {
-    const wrapper = mount(WeeklyTaskList, {
-      props: {
-        weeklyTasks: makeTasks(),
-        taskCompletion: makeCompletion(),
-      },
-    });
+  it('calls store.toggleCompletion when a checkbox is changed', async () => {
+    vi.spyOn(store, 'toggleCompletion')
+    const wrapper = mountIt()
+    await wrapper.find('input[type="checkbox"]').trigger('change')
+    expect(store.toggleCompletion).toHaveBeenCalledWith('Monday', '1')
+  })
 
-    await wrapper.find("button").trigger("click");
+  it('shows edit and delete buttons for each task in all-days view', async () => {
+    const wrapper = mountIt()
+    const allTab = wrapper.findAll('[role="tab"]').find(b => b.text().includes('All'))
+    await allTab.trigger('click')
+    expect(wrapper.find('[data-testid="edit-btn-Monday-1"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="delete-btn-Monday-1"]').exists()).toBe(true)
+  })
 
-    const editBtn = wrapper.find('[data-testid="edit-btn-Monday-1"]');
-    expect(editBtn.exists()).toBe(true);
+  it('calls store.editTask when task is edited and saved', async () => {
+    vi.spyOn(store, 'editTask')
+    const wrapper = mountIt()
+    const allTab = wrapper.findAll('[role="tab"]').find(b => b.text().includes('All'))
+    await allTab.trigger('click')
 
-    await editBtn.trigger("click");
-    await wrapper.vm.$nextTick();
+    await wrapper.find('[data-testid="edit-btn-Monday-1"]').trigger('click')
+    await wrapper.vm.$nextTick()
 
-    const input = wrapper.find('[data-testid="edit-input-Monday-1"]');
-    expect(input.exists()).toBe(true);
+    const input = wrapper.find('[data-testid="edit-input-Monday-1"]')
+    expect(input.exists()).toBe(true)
+    await input.setValue('Updated Task')
+    await wrapper.find('[data-testid="save-btn-Monday-1"]').trigger('click')
 
-    await input.setValue("Updated Task");
-    const saveBtn = wrapper.find('[data-testid="save-btn-Monday-1"]');
-    await saveBtn.trigger("click");
+    expect(store.editTask).toHaveBeenCalledWith('Monday', '1', 'Updated Task')
+  })
 
-    expect(wrapper.emitted("edit-task")).toBeTruthy();
-    expect(wrapper.emitted("edit-task")[0][0].newText).toBe("Updated Task");
-  });
+  it('shows the weekly badge for repeating tasks in all-days view', async () => {
+    const wrapper = mountIt()
+    const allTab = wrapper.findAll('[role="tab"]').find(b => b.text().includes('All'))
+    await allTab.trigger('click')
+    expect(wrapper.html()).toContain('weekly')
+  })
 
-  it("shows 'repeating' badge for repeating tasks in all tasks view", async () => {
-    const wrapper = mount(WeeklyTaskList, {
-      props: {
-        weeklyTasks: makeTasks(),
-        taskCompletion: makeCompletion(),
-      },
-    });
-    await wrapper.find("button").trigger("click");
-    expect(wrapper.html()).toContain("repeating");
-  });
+  it('shows empty state for days with no tasks in all-days view', async () => {
+    const wrapper = mountIt()
+    const allTab = wrapper.findAll('[role="tab"]').find(b => b.text().includes('All'))
+    await allTab.trigger('click')
+    expect(wrapper.text()).toContain('No tasks for Tuesday')
+  })
 
-  it("shows 'No tasks' message for empty days in all tasks view", async () => {
-    const wrapper = mount(WeeklyTaskList, {
-      props: {
-        weeklyTasks: makeTasks(),
-        taskCompletion: makeCompletion(),
-      },
-    });
-    await wrapper.find("button").trigger("click");
-    expect(wrapper.text()).toContain("No tasks for Tuesday");
-  });
-
-  it("emits remove-task when Delete is clicked", async () => {
-    const wrapper = mount(WeeklyTaskList, {
-      props: {
-        weeklyTasks: makeTasks(),
-        taskCompletion: makeCompletion(),
-      },
-    });
-    await wrapper.find("button").trigger("click");
-    const deleteBtn = wrapper
-      .findAll("button")
-      .find((b) => b.text() === "Delete");
-    await deleteBtn.trigger("click");
-    expect(wrapper.emitted("remove-task")).toBeTruthy();
-  });
-});
+  it('calls store.removeTask when delete button is clicked', async () => {
+    vi.spyOn(store, 'removeTask')
+    const wrapper = mountIt()
+    const allTab = wrapper.findAll('[role="tab"]').find(b => b.text().includes('All'))
+    await allTab.trigger('click')
+    await wrapper.find('[data-testid="delete-btn-Monday-1"]').trigger('click')
+    expect(store.removeTask).toHaveBeenCalledWith('Monday', '1')
+  })
+})

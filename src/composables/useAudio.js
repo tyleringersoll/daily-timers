@@ -14,13 +14,13 @@ export function useAudio(audioSrc = '/alert.mp3') {
       const audio = _getAudio()
       audio.currentTime = 0
       await audio.play()
-    } catch {
-      // If the cached instance fails (e.g. after an interrupted play), try fresh.
+    } catch (error) {
+      console.warn('Audio playback failed:', error)
       try {
         const fallback = new Audio(audioSrc)
         await fallback.play()
       } catch (err) {
-        console.warn('Audio playback failed:', err)
+        console.warn('Fallback audio failed:', err)
       }
     }
   }

@@ -1,63 +1,61 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { useNotification } from "./useNotification";
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { useNotification } from './useNotification'
 
-describe("useNotification", () => {
+describe('useNotification', () => {
   beforeEach(() => {
-    const NotificationMock = vi.fn();
-    NotificationMock.permission = "granted";
-    NotificationMock.requestPermission = vi.fn().mockResolvedValue("granted");
+    const NotificationMock = vi.fn()
+    NotificationMock.permission = 'granted'
+    NotificationMock.requestPermission = vi.fn().mockResolvedValue('granted')
+    global.Notification = NotificationMock
+  })
 
-    global.Notification = NotificationMock;
-    global.window = {
-      Notification: global.Notification,
-    };
-  });
+  it('requests permission when called and permission is default', async () => {
+    global.Notification.permission = 'default'
+    const { requestPermission } = useNotification()
+    await requestPermission()
+    expect(Notification.requestPermission).toHaveBeenCalled()
+  })
 
-  it("should request notification permission on initialization", () => {
-    useNotification();
-    expect(Notification.requestPermission).toHaveBeenCalled();
-  });
+  it('does not request permission when already granted', async () => {
+    global.Notification.permission = 'granted'
+    const { requestPermission } = useNotification()
+    await requestPermission()
+    expect(Notification.requestPermission).not.toHaveBeenCalled()
+  })
 
-  it("should send notification with default options", () => {
-    const { sendNotification } = useNotification();
-    sendNotification("Test Title");
-
-    expect(Notification).toHaveBeenCalledWith("Test Title", {
-      icon: "/timer-icon.png",
+  it('sends notification with default options', () => {
+    const { sendNotification } = useNotification()
+    sendNotification('Test Title')
+    expect(Notification).toHaveBeenCalledWith('Test Title', {
+      icon: '/timer.svg',
       requireInteraction: true,
-    });
-  });
+    })
+  })
 
-  it("should send notification with custom options", () => {
-    const { sendNotification } = useNotification();
-    const customOptions = {
-      body: "Test Body",
-      icon: "/custom-icon.png",
-    };
-
-    sendNotification("Test Title", customOptions);
-
-    expect(Notification).toHaveBeenCalledWith("Test Title", {
-      ...customOptions,
+  it('merges custom options, allowing icon override', () => {
+    const { sendNotification } = useNotification()
+    sendNotification('Test Title', { body: 'Test Body', icon: '/custom-icon.png' })
+    expect(Notification).toHaveBeenCalledWith('Test Title', {
+      icon: '/custom-icon.png',
       requireInteraction: true,
-    });
-  });
+      body: 'Test Body',
+    })
+  })
 
-  it("should not send notification when permission is denied", () => {
-    global.Notification.permission = "denied";
-    const { sendNotification } = useNotification();
+  it('does not send notification when permission is denied', () => {
+    global.Notification.permission = 'denied'
+    const { sendNotification } = useNotification()
+    sendNotification('Test Title')
+    expect(Notification).not.toHaveBeenCalled()
+  })
 
-    sendNotification("Test Title");
-    expect(Notification).not.toHaveBeenCalled();
-  });
-
-  it("should not crash when Notification API is not available", () => {
-    delete global.window.Notification;
-    const { sendNotification } = useNotification();
-
+  it('does not throw when Notification API is unavailable', () => {
+    const saved = global.Notification
+    delete global.Notification
     expect(() => {
-      useNotification();
-      sendNotification("Test Title");
-    }).not.toThrow();
-  });
-});
+      const { sendNotification } = useNotification()
+      sendNotification('Test Title')
+    }).not.toThrow()
+    global.Notification = saved
+  })
+})
