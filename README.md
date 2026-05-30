@@ -1,147 +1,82 @@
-# Daily Repeating Timers
+# Daily Timers
 
-A Vue.js 3 application for managing multiple daily repeating timers within a scheduled time window. Perfect for managing recurring daily tasks, work intervals, or any time-based routines.
+Repeating work-hour timers and weekly task tracking, right in your browser. Built for personal use and hosted at [daily-timers.ingersoll.dev](https://daily-timers.ingersoll.dev).
 
 ## Features
 
-- 🕒 Create multiple concurrent timers
-- 📅 Schedule active hours for automatic timer management
-- 🔄 Daily reset functionality
-- 🔔 Audio and browser notifications
-- 💾 Persistent storage of timers and settings
-- 📱 Responsive design
-- 🌐 Timezone support
+- Multiple concurrent countdown timers with circular progress rings
+- Configurable active-hours window — timers auto-pause and resume on schedule
+- Timezone-aware schedule (defaults to your local timezone)
+- Browser notifications and audio alert on timer completion
+- Weekly task tracker with per-day tabs and a full-week view
+- Tasks marked as "repeating" survive the weekly auto-reset; one-off tasks are cleared
+- Dark / light theme with system-preference awareness and localStorage persistence
+- All data persisted in `localStorage` — no backend, no account
+- Keyboard accessible throughout (ARIA tabs, focus-trapped toast, skip-nav link)
 
-## Prerequisites
+## Stack
 
-Before you begin, ensure you have installed:
-- Node.js (v16.0.0 or higher)
-- npm (v7.0.0 or higher)
+- **Vue 3** (Composition API, `<script setup>`)
+- **Pinia** — singleton state stores for timers, schedule, weekly tasks, toast queue, and theme
+- **SCSS** — custom design system matching [tyleringersoll.com](https://tyleringersoll.com) brand tokens
+- **Vite** — build tool
+- **Vitest** — unit tests
+- **Cypress** — E2E tests
 
-## Installation
+## Getting started
 
-1. Clone the repository:
 ```bash
-git clone https://github.com/tyleringersoll/vue-daily-timers.git
-cd vue-daily-timers
-```
-
-2. Install dependencies:
-```bash
+git clone https://github.com/tyleringersoll/daily-timers.git
+cd daily-timers
 npm install
+npm run dev        # http://localhost:5173
 ```
 
+## Scripts
 
-## Development
+| Command | Description |
+|---|---|
+| `npm run dev` | Start dev server |
+| `npm run build` | Production build |
+| `npm run preview` | Preview production build |
+| `npm run test:unit` | Run Vitest unit tests |
+| `npm run test:e2e` | Run Cypress headless |
+| `npm run test:e2e:dev` | Open Cypress UI |
 
-Start the development server:
-```bash
-npm run dev
-```
-
-The application will be available at `http://localhost:5173`
-
-## Building for Production
-
-Build the application:
-```bash
-npm run build
-```
-
-Preview the production build:
-```bash
-npm run preview
-```
-
-## Testing
-
-The application includes both unit tests (Vitest) and E2E tests (Cypress).
-
-### Unit Tests
-
-Run unit tests:
-```bash
-npm run test:unit
-```
-
-### E2E Tests
-
-Start the development server:
-```bash
-npm run dev
-```
-
-In a separate terminal, run E2E tests:
-```bash
-# Run in headless mode
-npm run test:e2e
-
-# Run with Cypress UI
-npm run test:e2e:dev
-```
-
-## Project Structure
+## Project structure
 
 ```
-daily-repeating-timers/
-├── src/
-│   ├── components/         # Vue components
-│   ├── composables/        # Vue composables
-│   ├── constants/          # Application constants
-│   └── App.vue             # Root component
-├── cypress/
-│   └── e2e/               # E2E tests
-├── public/                # Public static assets
-└── package.json           # Project dependencies
+src/
+├── components/
+│   ├── AppHeader.vue        # Sticky frosted-glass header + theme toggle
+│   ├── AppFooter.vue
+│   ├── TimerCard.vue        # Individual timer with SVG progress ring
+│   ├── TimerList.vue
+│   ├── TimerForm.vue
+│   ├── TimerToast.vue       # Expired-timer alert (Teleport + focus trap)
+│   ├── ScheduleSettings.vue
+│   ├── WeeklyTaskList.vue   # Day-tab strip with ARIA tablist pattern
+│   └── WeeklyTaskForm.vue
+├── stores/
+│   ├── timers.js
+│   ├── schedule.js
+│   ├── weeklyTasks.js
+│   ├── toast.js
+│   └── theme.js
+├── composables/
+│   ├── useAudio.js
+│   ├── useNotification.js
+│   └── useCurrentDay.js
+├── styles/
+│   ├── _variables.scss      # Spacing, breakpoints, mixins
+│   ├── _theme-vars.scss     # CSS custom properties (dark + light)
+│   ├── _base.scss           # Reset, typography, shared component classes
+│   └── main.scss
+├── utils/
+│   └── formatTime.js
+└── constants.js
 ```
-
-## Key Components
-
-### Components
-- `TimerForm.vue`: Form for creating new timers
-- `TimerList.vue`: Display and management of active timers
-- `ScheduleSettings.vue`: Schedule configuration interface
-
-### Composables
-- `useTimers`: Timer management logic
-- `useSchedule`: Schedule management logic
-- `useAudio`: Audio notification handling
-- `useNotification`: Desktop notification management
-
-## Configuration
-
-### Timer Schedule
-- Default schedule: 9:00 AM - 5:00 PM EST
-- Configurable through the UI
-- Persists across sessions
-
-### Notifications
-- Audio notifications when timers complete
-- Desktop notifications (requires permission)
-- Fallback to alert if notifications are not available
-
-## Browser Support
-
-The application supports all modern browsers:
-- Chrome (latest 2 versions)
-- Firefox (latest 2 versions)
-- Safari (latest 2 versions)
-- Edge (latest 2 versions)
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- Created by Tyler Ingersoll
-- Built with Vue.js 3
-- Styled with Tailwind CSS
+MIT — see [LICENSE](LICENSE) for details.
