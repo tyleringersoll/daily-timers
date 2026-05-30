@@ -2,9 +2,32 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/timer.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Daily Timers</title>
+    <meta name="description" content="Personal daily timers and weekly task tracker — stays active during your 9–5 work window." />
+    <meta name="author" content="Tyler Ingersoll" />
+    <meta property="og:title" content="Daily Timers" />
+    <meta property="og:description" content="Repeating work-hour timers and weekly task tracking, right in your browser." />
+    <meta property="og:url" content="https://daily-timers.ingersoll.dev" />
+
+    <link rel="icon" type="image/svg+xml" href="/timer.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <title>Daily Timers — ingersoll.dev</title>
+
+    <!-- FOUC prevention: apply saved theme before first paint -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          if (t === 'light') document.documentElement.classList.add('light-mode');
+        } catch (_) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>

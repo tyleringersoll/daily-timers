@@ -1,0 +1,73 @@
+// CSS custom properties — mirrors tyleringersoll.com token set.
+// Default: dark mode. Light mode via html.light-mode class.
+
+:root {
+  --color-bg-deepest:   #0d1014;
+  --color-bg-primary:   #151a1e;
+  --color-bg-secondary: #1f272d;
+  --color-bg-nav:       #2c363f;
+  --color-bg-surface:   #343d46;
+  --color-bg-header:    rgba(21, 26, 30, 0.88);
+
+  --color-text-primary:   #fefefe;
+  --color-text-secondary: #a7adba;
+  --color-text-muted:     #65737e;
+
+  --color-border:      #4f5b66;
+  --color-accent-line: #00b7ff;
+  --color-link:        #ff6f69;
+  --color-link-hover:  #ffcc5c;
+  --color-focus:       #0072ff;
+
+  --color-btn-primary-bg:   #00b7ff;
+  --color-btn-primary-text: #0d1014;
+
+  --color-success: #50fa7b;
+  --color-warning: #ffb86c;
+  --color-danger:  #ff6f69;
+
+  --color-timer-running:  #00b7ff;
+  --color-timer-paused:   #65737e;
+  --color-timer-track:    #2c363f;
+}
+
+html.light-mode {
+  --color-bg-deepest:   #c8cdd3;
+  --color-bg-primary:   #f5f5f0;
+  --color-bg-secondary: #e8e8e2;
+  --color-bg-nav:       #dde0e4;
+  --color-bg-surface:   #d4d7dc;
+  --color-bg-header:    rgba(245, 245, 240, 0.88);
+
+  --color-text-primary:   #1a1a1a;
+  --color-text-secondary: #444a55;
+  --color-text-muted:     #5e6672;
+
+  --color-border:      #c0c5cb;
+  --color-accent-line: #007ab5;
+  --color-link:        #c0392b;
+  --color-link-hover:  #b07d00;
+  --color-focus:       #0055cc;
+
+  --color-btn-primary-bg:   #007ab5;
+  --color-btn-primary-text: #ffffff;
+
+  --color-success: #2d9e55;
+  --color-warning: #b07d00;
+  --color-danger:  #c0392b;
+
+  --color-timer-running:  #007ab5;
+  --color-timer-paused:   #5e6672;
+  --color-timer-track:    #c8cdd3;
+}
+
+// Smooth theme transitions (applied during toggle only)
+html.theme-transitioning,
+html.theme-transitioning * {
+  transition:
+    background-color 0.4s ease,
+    color 0.4s ease,
+    border-color 0.4s ease,
+    fill 0.4s ease,
+    stroke 0.4s ease !important;
+}

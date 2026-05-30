@@ -1,23 +1,16 @@
 export function useNotification() {
-  const initialize = async () => {
-    if ("Notification" in window) {
-      await Notification.requestPermission();
+  // Permission request is deferred — call requestPermission() from onMounted
+  // in the root component, not at import time.
+  const requestPermission = async () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      await Notification.requestPermission()
     }
-  };
-
-  initialize();
+  }
 
   const sendNotification = (title, options = {}) => {
-    if (!("Notification" in window) || Notification.permission !== "granted") {
-      return;
-    }
+    if (!('Notification' in window) || Notification.permission !== 'granted') return
+    new Notification(title, { icon: '/timer.svg', requireInteraction: true, ...options })
+  }
 
-    new Notification(title, {
-      icon: "/timer-icon.png",
-      requireInteraction: true,
-      ...options,
-    });
-  };
-
-  return { sendNotification };
+  return { requestPermission, sendNotification }
 }

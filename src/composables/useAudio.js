@@ -1,21 +1,29 @@
-export function useAudio(audioSrc = "alert.mp3") {
-  const audio = new Audio(audioSrc);
-  audio.volume = 1.0;
+export function useAudio(audioSrc = '/alert.mp3') {
+  let _audio = null
+
+  const _getAudio = () => {
+    if (!_audio) {
+      _audio = new Audio(audioSrc)
+      _audio.volume = 1.0
+    }
+    return _audio
+  }
 
   const playSound = async () => {
     try {
-      audio.currentTime = 0;
-      await audio.play();
-    } catch (error) {
-      console.warn("Audio playback failed:", error);
+      const audio = _getAudio()
+      audio.currentTime = 0
+      await audio.play()
+    } catch {
+      // If the cached instance fails (e.g. after an interrupted play), try fresh.
       try {
-        const fallbackAudio = new Audio(audioSrc);
-        await fallbackAudio.play();
-      } catch (fallbackError) {
-        console.warn("Fallback audio failed:", fallbackError);
+        const fallback = new Audio(audioSrc)
+        await fallback.play()
+      } catch (err) {
+        console.warn('Audio playback failed:', err)
       }
     }
-  };
+  }
 
-  return { playSound };
+  return { playSound }
 }

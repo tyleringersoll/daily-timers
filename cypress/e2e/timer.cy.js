@@ -58,9 +58,9 @@ describe("Timer Application", () => {
     cy.get('input[placeholder="Enter task"]').type("Test Task");
     cy.contains("button", "Add Task").click();
 
-    // Verify task was created and view all tasks
+    // Verify task was created and view all tasks (click the All tab)
     cy.contains("Test Task").should("exist");
-    cy.contains("button", "View All Tasks").click();
+    cy.get('[role="tablist"] button').contains("All").click();
 
     // Wait for the Monday section to be visible
     cy.get('[data-testid="day-section-Monday"]') // Removed the ^ and -

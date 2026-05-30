@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E '\\\\.\\(css|scss|sass|less|vue|js|ts|json|html\\)$' /Users/tyleringersoll/.claude/projects/-Users-tyleringersoll-GitHub-daily-timers/1d97c023-f0ac-47b1-be34-00f486abd21b/tool-results/b1j2gkntl.txt)",
+      "Bash(npm list *)"
+    ]
+  }
+}

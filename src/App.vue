@@ -1,189 +1,154 @@
-// App.vue script section
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
-import { useSchedule } from "./composables/useSchedule";
-import { useTimers } from "./composables/useTimers";
-import ScheduleSettings from "./components/ScheduleSettings.vue";
-import TimerForm from "./components/TimerForm.vue";
-import TimerList from "./components/TimerList.vue";
-import { useWeeklyTasks } from "./composables/useWeeklyTasks";
-import WeeklyTaskForm from "./components/WeeklyTaskForm.vue";
-import WeeklyTaskList from "./components/WeeklyTaskList.vue";
+import { ref, onMounted, onUnmounted } from 'vue'
+import { useThemeStore } from './stores/theme'
+import { useTimerStore } from './stores/timers'
+import { useScheduleStore } from './stores/schedule'
+import { useWeeklyTaskStore } from './stores/weeklyTasks'
+import { useNotification } from './composables/useNotification'
 
-const showTimerForm = ref(false);
-const showTaskForm = ref(false);
+import AppHeader from './components/AppHeader.vue'
+import AppFooter from './components/AppFooter.vue'
+import TimerList from './components/TimerList.vue'
+import TimerForm from './components/TimerForm.vue'
+import ScheduleSettings from './components/ScheduleSettings.vue'
+import WeeklyTaskList from './components/WeeklyTaskList.vue'
+import WeeklyTaskForm from './components/WeeklyTaskForm.vue'
+import TimerToast from './components/TimerToast.vue'
 
-const { scheduleStart, scheduleEnd, timezone, loadSchedule, isWithinSchedule } =
-  useSchedule();
+const theme = useThemeStore()
+const timerStore = useTimerStore()
+const schedule = useScheduleStore()
+const taskStore = useWeeklyTaskStore()
+const { requestPermission } = useNotification()
 
-const {
-  timers,
-  addTimer,
-  startTimer,
-  pauseTimer,
-  restartTimer,
-  deleteTimer,
-  formatTime,
-  loadTimers,
-} = useTimers();
+const showTimerForm = ref(false)
+const showTaskForm = ref(false)
 
-const {
-  weeklyTasks,
-  taskCompletion,
-  addTask,
-  removeTask,
-  toggleTaskCompletion,
-  loadTasks,
-  checkAndResetWeek,
-} = useWeeklyTasks();
+// Periodic schedule enforcement — pause/resume timers outside work hours.
+let scheduleInterval = null
 
-const startScheduleCheck = () => {
-  const interval = setInterval(() => {
-    if (isWithinSchedule()) {
-      timers.value.forEach((timer) => {
-        if (timer.isRunning && !timer.intervalId) {
-          startTimer(timer);
-        }
-      });
-    } else {
-      timers.value.forEach((timer) => {
-        if (timer.intervalId) {
-          pauseTimer(timer);
-        }
-      });
-    }
-  }, 60000);
-
-  return interval;
-};
-
-onMounted(() => {
-  loadSchedule();
-  loadTimers();
-  loadTasks();
-  checkAndResetWeek();
-
-  const scheduleInterval = startScheduleCheck();
-
-  if (isWithinSchedule()) {
-    timers.value.forEach((timer) => {
-      if (timer.isRunning && !timer.intervalId) {
-        startTimer(timer);
-      }
-    });
+const enforceSchedule = () => {
+  if (schedule.isActive()) {
+    timerStore.resumeActiveWithinSchedule()
+  } else {
+    timerStore.pauseAll()
   }
+}
 
-  onUnmounted(() => {
-    clearInterval(scheduleInterval);
-    timers.value.forEach(pauseTimer);
-  });
-});
+onMounted(async () => {
+  theme.init()
+  schedule.load()
+  timerStore.load()
+  taskStore.load()
+  taskStore.checkAndResetWeek()
 
-const handleAddTimer = ({ name, minutes }) => {
-  addTimer(name, minutes);
-};
+  await requestPermission()
 
-const handleAddWeeklyTask = ({ day, text, repeating }) => {
-  addTask(day, text, repeating);
-};
+  // Resume running timers if we're within the work window.
+  if (schedule.isActive()) timerStore.resumeActiveWithinSchedule()
 
-const handleEditTask = ({ day, taskId, newText }) => {
-  const tasks = weeklyTasks.value[day];
-  const idx = tasks.findIndex((t) => t.id === taskId);
-  if (idx !== -1) {
-    weeklyTasks.value[day] = [
-      ...tasks.slice(0, idx),
-      { ...tasks[idx], text: newText },
-      ...tasks.slice(idx + 1),
-    ];
-  }
-};
+  scheduleInterval = setInterval(enforceSchedule, 60_000)
+})
 
-const handleToggleTask = ({ day, taskId }) => {
-  toggleTaskCompletion(day, taskId);
-};
+onUnmounted(() => {
+  clearInterval(scheduleInterval)
+  timerStore.pauseAll()
+})
 
-const handleRemoveTask = ({ day, taskId }) => {
-  removeTask(day, taskId);
-};
+const handleAddTimer = ({ name, minutes }) => timerStore.add(name, minutes)
+const handleAddTask = ({ day, text, repeating }) => taskStore.addTask(day, text, repeating)
 </script>
 
 <template>
-  <div class="min-h-screen pb-16">
-    <div class="container mx-auto p-4">
-      <h1 class="text-2xl font-bold mb-4">Repeating Timers and Tasks</h1>
+  <div class="app-shell">
+    <a href="#main-content" class="skip-nav">Skip to content</a>
 
-      <!-- Active Timers Section -->
-      <div class="bg-gray-100 rounded p-4 mb-6">
-        <div class="flex items-center justify-between mb-2">
-          <h2 class="text-2xl font-bold mb-6">Active Timers</h2>
+    <AppHeader />
+
+    <main id="main-content" class="main-content">
+
+      <!-- ── Timers section ──────────────────────────────────────────────── -->
+      <section class="section-card" aria-labelledby="timers-heading">
+        <div class="section-header">
+          <h2 id="timers-heading">Active Timers</h2>
           <button
-            v-if="!showTimerForm"
-            @click="showTimerForm = true"
-            class="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+            type="button"
+            class="btn"
+            :class="showTimerForm ? 'btn--ghost' : 'btn--primary'"
+            :aria-expanded="showTimerForm"
+            aria-controls="timer-form-panel"
+            @click="showTimerForm = !showTimerForm"
           >
-            Add New Timer
+            {{ showTimerForm ? 'Hide' : 'Add New Timer' }}
           </button>
         </div>
-        <div v-if="showTimerForm" class="mb-4">
-          <ScheduleSettings
-            v-model:scheduleStart="scheduleStart"
-            v-model:scheduleEnd="scheduleEnd"
-          />
-          <TimerForm @add-timer="handleAddTimer" />
-          <button
-            @click="showTimerForm = false"
-            class="mt-2 px-3 py-1 text-xs bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
-          >
-            Hide
-          </button>
-        </div>
+
+        <Transition name="slide-down">
+          <div v-if="showTimerForm" id="timer-form-panel">
+            <ScheduleSettings />
+            <TimerForm @add-timer="handleAddTimer" />
+            <hr class="divider" />
+          </div>
+        </Transition>
+
         <TimerList
-          :timers="timers"
-          :formatTime="formatTime"
-          @start-timer="startTimer"
-          @pause-timer="pauseTimer"
-          @restart-timer="restartTimer"
-          @delete-timer="deleteTimer"
+          :timers="timerStore.timers"
+          @start-timer="timerStore.start"
+          @pause-timer="timerStore.pause"
+          @restart-timer="timerStore.restart"
+          @delete-timer="timerStore.remove"
         />
-      </div>
+      </section>
 
-      <!-- Weekly Tasks Section -->
-      <div class="bg-gray-50 rounded-lg shadow-sm p-6 mt-8 border pt-8">
-        <div class="flex items-center justify-between mb-2">
-          <h2 class="text-2xl font-bold">Weekly Tasks</h2>
+      <!-- ── Weekly tasks section ───────────────────────────────────────── -->
+      <section class="section-card" aria-labelledby="tasks-heading">
+        <div class="section-header">
+          <h2 id="tasks-heading">Weekly Tasks</h2>
           <button
-            v-if="!showTaskForm"
-            @click="showTaskForm = true"
-            class="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+            type="button"
+            class="btn"
+            :class="showTaskForm ? 'btn--ghost' : 'btn--primary'"
+            :aria-expanded="showTaskForm"
+            aria-controls="task-form-panel"
+            @click="showTaskForm = !showTaskForm"
           >
-            Add Daily Task
+            {{ showTaskForm ? 'Hide' : 'Add Daily Task' }}
           </button>
         </div>
-        <div v-if="showTaskForm" class="mb-4">
-          <WeeklyTaskForm @add-task="handleAddWeeklyTask" />
-          <button
-            @click="showTaskForm = false"
-            class="mt-2 px-3 py-1 text-xs bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
-          >
-            Hide
-          </button>
-        </div>
-        <WeeklyTaskList
-          :weekly-tasks="weeklyTasks"
-          :task-completion="taskCompletion"
-          @toggle-task="handleToggleTask"
-          @remove-task="handleRemoveTask"
-          @edit-task="handleEditTask"
-        />
-      </div>
-    </div>
 
-    <footer
-      class="fixed bottom-0 left-0 w-full text-center bg-white text-sm text-gray-500 py-2 border-t border-gray-300"
-    >
-      &copy;{{ new Date().getFullYear() }}
-      <a href="https://tyleringersoll.com">Tyler Ingersoll</a>
-    </footer>
+        <Transition name="slide-down">
+          <div v-if="showTaskForm" id="task-form-panel">
+            <WeeklyTaskForm @add-task="handleAddTask" />
+            <hr class="divider" />
+          </div>
+        </Transition>
+
+        <WeeklyTaskList />
+      </section>
+
+    </main>
+
+    <AppFooter />
+
+    <!-- Toast overlay — rendered at body root via Teleport -->
+    <TimerToast />
   </div>
 </template>
+
+<style lang="scss">
+@use './styles/variables' as *;
+
+// ── Panel slide-down transition ───────────────────────────────────────────────
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: max-height 0.3s ease, opacity 0.25s ease;
+  overflow: hidden;
+  max-height: 500px;
+}
+
+.slide-down-enter-from,
+.slide-down-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+</style>
